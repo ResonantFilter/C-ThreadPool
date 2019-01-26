@@ -1,4 +1,4 @@
-# C-ThreadPool
+# TPool-C
 Simple implementation of a Thread Pool using pthread.h
 
 # NOT YET COMPLETED
