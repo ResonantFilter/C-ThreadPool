@@ -1,0 +1,4 @@
+*.o
+*cc
+*.out
+.vscode/*
