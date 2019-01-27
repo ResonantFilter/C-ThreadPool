@@ -1,5 +1,7 @@
 *.o
 *.cc
 *.out
+.vscode
 .vscode/*
+vgcore*
 threadPoolTest

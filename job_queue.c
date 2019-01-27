@@ -68,6 +68,10 @@ Job* takeJob(JobQueue* jobQueue) {
     return jobToBeTaken;    
 }
 
+Job* peekJob(const JobQueue *jobQueue) {
+    return !(jobQueue->queueHead) ? NULL : jobQueue->queueHead;    
+}
+
 int clearJobQueue(JobQueue* jobQueue) {
     clearJobs(jobQueue);    
     jobQueue = initAJobQueue();
@@ -80,12 +84,14 @@ int disposeJobQueue(JobQueue* jobQueue) {
     return 0;
 }
 
-void printJobQueue(const JobQueue* jobQueue) {
+void printJobQueue(const JobQueue *jobQueue) {
+    if (!jobQueue) return;
     printf("length: %d\n", jobQueue->length);
     Job* aux = jobQueue->queueHead;
+
     while (aux != NULL) {
         printf("job: %d\n", aux->jobId);
-        aux = (aux->nextJob != NULL) ? aux->nextJob : NULL;
+        aux = !(aux->nextJob) ? NULL : aux->nextJob;
     }
 }
 

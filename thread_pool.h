@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE //needed for using sigaction
 #ifndef __THREAD_POOL_H_
 #define __THREAD_POOL_H
 
@@ -16,6 +17,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 #include <string.h>
 
 enum ERRTYPE {ENULLARG = -1, EFREEFAIL = -2};
@@ -47,10 +49,11 @@ typedef struct Thread {
 typedef struct ThreadPool {
     Thread** pooledThreads;
     JobQueue* jobQueue;
-    volatile int numAliveThreads;
-    volatile int numWorkingThreads;
+    volatile unsigned numAliveThreads;
+    volatile unsigned numWorkingThreads;
+    unsigned poolSize;
     pthread_mutex_t threadPoolMutex;
-    pthread_cond_t startWorking;
+    pthread_cond_t waitingForJobs;
 } ThreadPool;
 
 /*space for functions prototypes*/
@@ -58,12 +61,15 @@ typedef struct ThreadPool {
 JobQueue* initAJobQueue();
 int pushJob(JobQueue* jobQueue, Job* newJob);
 Job* takeJob(JobQueue* jobQueue);
+Job* peekJob(const JobQueue *jobQueue);
 int clearJobQueue(JobQueue* jobQueue);
 int disposeJobQueue(JobQueue* jobQueue);
-void printJobQueue(const JobQueue* jobQueue);
+void printJobQueue(const JobQueue *jobQueue);
 
-Thread* spawnThread(ThreadPool* fatherPool ,unsigned threadID);
+Thread* spawnThread(ThreadPool* fatherPool, unsigned threadID);
 ThreadPool* initAThreadPool(unsigned poolSize);
 void* doWork(void* _worker);
+void submitJob(ThreadPool* threadPool, void (*jobRoutine)(void*), void* routineArgs);
+void pauseThreadPool(ThreadPool* threadPool);
 
 #endif

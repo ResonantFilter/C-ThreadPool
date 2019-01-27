@@ -1,5 +1,29 @@
 #include "thread_pool.h"
 
+volatile int onpause = 0;
+static void pauseThread(int signum);
+
+void submitJob(ThreadPool* threadPool, void (*jobRoutine)(void*), void* routineArgs) {
+    if (!threadPool) {
+        error(THPOOL_NOTINIT);
+        return;
+    }
+
+    Job* newJob = (Job *)malloc(sizeof(Job));
+    if (!newJob) {
+        error(MALLOC_FAIL);
+        return;
+    }
+
+    newJob->jobId = !(threadPool->jobQueue->queueHead) ? 0 : peekJob(threadPool->jobQueue)->jobId++;
+    newJob->jobRoutine = jobRoutine;
+    newJob->routineArgs = routineArgs;
+
+    if (pushJob(threadPool->jobQueue, newJob) < 0) {
+        return;
+    } 
+}
+
 void* doWork(void* _worker) {
     if (_worker == NULL) {
         error(THPOOL_NOTINIT);
@@ -10,13 +34,42 @@ void* doWork(void* _worker) {
     ThreadPool* fatherPool = worker->fatherPool;
 
     pthread_mutex_lock(&fatherPool->threadPoolMutex);
-        fatherPool->numAliveThreads += 1;
-    pthread_mutex_unlock(&fatherPool->threadPoolMutex);
+        ++fatherPool->numAliveThreads;
+    pthread_mutex_unlock(&fatherPool->threadPoolMutex); 
 
-    pthread_exit(0);
+    struct sigaction sa;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sa.sa_handler = pauseThread;
+
+    if (sigaction(SIGUSR1, &sa, NULL)) {
+        error("Unable to Catch 'SIGUSR1' signal\n");
+    }
+
+    while(1) {
+        if(fatherPool->jobQueue->length) {
+            pthread_mutex_lock(&fatherPool->threadPoolMutex);
+                ++fatherPool->numWorkingThreads;
+            pthread_mutex_unlock(&fatherPool->threadPoolMutex);
+            Job* currentJob = takeJob(fatherPool->jobQueue);
+            if (currentJob) {
+                void (*routine)(void*);
+                void *_routineArgs;
+                routine =  (void *)currentJob->jobRoutine;
+                _routineArgs = &currentJob->routineArgs;
+                routine(_routineArgs);
+                free(currentJob);
+            }
+            pthread_mutex_lock(&fatherPool->threadPoolMutex);
+                --fatherPool->numWorkingThreads;
+            pthread_mutex_unlock(&fatherPool->threadPoolMutex);
+        }
+    }
+    
+    pthread_exit(0);    
 }
 
-Thread* spawnThread(ThreadPool* fatherPool ,unsigned threadID) {
+Thread* spawnThread(ThreadPool* fatherPool, unsigned threadID) {
     if (fatherPool == NULL) {
         error(THPOOL_NOTINIT);
         return NULL;
@@ -48,10 +101,12 @@ ThreadPool* initAThreadPool(unsigned poolSize) {
         error(MALLOC_FAIL);
     }
     
+    threadPool->poolSize = poolSize;
     threadPool->numAliveThreads = 0;
     threadPool->numWorkingThreads = 0;
 
-    if ((threadPool->jobQueue = initAJobQueue()) == NULL) {
+    threadPool->jobQueue = initAJobQueue();
+    if (threadPool->jobQueue == NULL) {
         error(MALLOC_FAIL);
         free(threadPool);
         return NULL;
@@ -66,7 +121,7 @@ ThreadPool* initAThreadPool(unsigned poolSize) {
     }
     
     pthread_mutex_init(&(threadPool->threadPoolMutex), NULL);
-    pthread_cond_init(&(threadPool->startWorking), NULL);
+    pthread_cond_init(&(threadPool->waitingForJobs), NULL);
 
     for (unsigned i = 0; i < poolSize; ++i) {
         threadPool->pooledThreads[i] = spawnThread(threadPool, i);
@@ -81,7 +136,27 @@ ThreadPool* initAThreadPool(unsigned poolSize) {
         printf("Spawned Thread no. %d\n", threadPool->pooledThreads[i]->threadID);
     }
 
-    while(threadPool->numAliveThreads != poolSize);
+    while(threadPool->numAliveThreads != threadPool->poolSize);
 
     return threadPool;
+}
+
+static void pauseThread(int signum) {
+    onpause = 1;
+    while(onpause) {
+        sleep(1);
+    }
+}
+
+void pauseThreadPool(ThreadPool* threadPool) {
+    if (!threadPool) {
+        error(THPOOL_NOTINIT);
+        return;
+    }
+
+    pthread_mutex_lock(&threadPool->threadPoolMutex);
+        while (threadPool->jobQueue->length || threadPool->numWorkingThreads) {
+            pthread_cond_wait(&threadPool->waitingForJobs, &threadPool->threadPoolMutex);
+        }
+    pthread_mutex_unlock(&threadPool->threadPoolMutex);
 }
