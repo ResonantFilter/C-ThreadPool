@@ -10,17 +10,23 @@
 #define THPOOL_SZ_OOR "Invalid Pool Size (0 < numThreads < 512)"
 #define THPOOL_NOTINIT "The ThreadPool has not been Initialized"
 #define NOTSPWND_THREAD "Error During Thread Creation"
+#define THREAD_NOTINIT  "The Thread has not been Initialized"
 
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 
 enum ERRTYPE {ENULLARG = -1, EFREEFAIL = -2};
+typedef struct Job Job;
+typedef struct JobQueue JobQueue;
+typedef struct Thread Thread;
+typedef struct ThreadPool ThreadPool;
 
 typedef struct Job {
     unsigned jobId;
-    struct Job* nextJob;   
+    struct Job* nextJob;   /*TODO*/
     void  (*jobRoutine)(void* arg);
     void* routineArgs;
 } Job;
@@ -34,6 +40,7 @@ typedef struct JobQueue {
 
 typedef struct Thread {
     unsigned threadID;
+    ThreadPool* fatherPool; //ThreadPool to which the Thread belongs
     pthread_t thread;
 } Thread;
 
@@ -43,7 +50,7 @@ typedef struct ThreadPool {
     volatile int numAliveThreads;
     volatile int numWorkingThreads;
     pthread_mutex_t threadPoolMutex;
-    pthread_cond_t putOnHold;
+    pthread_cond_t startWorking;
 } ThreadPool;
 
 /*space for functions prototypes*/
@@ -55,7 +62,8 @@ int clearJobQueue(JobQueue* jobQueue);
 int disposeJobQueue(JobQueue* jobQueue);
 void printJobQueue(const JobQueue* jobQueue);
 
-Thread* spawnThread(unsigned threadID);
+Thread* spawnThread(ThreadPool* fatherPool ,unsigned threadID);
 ThreadPool* initAThreadPool(unsigned poolSize);
+void* doWork(void* _worker);
 
 #endif
