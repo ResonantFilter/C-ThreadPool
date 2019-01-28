@@ -1,17 +1,19 @@
 #define _XOPEN_SOURCE //needed for using sigaction
+#define _POSIX_C_SOURCE 200809L
 #ifndef __THREAD_POOL_H_
 #define __THREAD_POOL_H
 
-#define error(errString) fprintf(stderr, strcat("Error: ", errString))
-#define JQ_NOTINIT "The Job Queue has not been Initialized"
-#define MALLOC_FAIL "Could not allocate memory on Heap"
-#define JOB_NOTINIT "Job provided has not been Initialized"
-#define UNXPCTD_NULL "Unexpected NULL pointer found"
-#define FREE_FAIL "Could not free memory at current location"
-#define THPOOL_SZ_OOR "Invalid Pool Size (0 < numThreads < 512)"
-#define THPOOL_NOTINIT "The ThreadPool has not been Initialized"
-#define NOTSPWND_THREAD "Error During Thread Creation"
-#define THREAD_NOTINIT  "The Thread has not been Initialized"
+#define error(errString) fprintf(stderr, errString)
+#define JQ_NOTINIT "The Job Queue has not been Initialized\n"
+#define MALLOC_FAIL "Could not allocate memory on Heap\n"
+#define JOB_NOTINIT "Job provided has not been Initialized\n"
+#define NOTA_SEMVALUE "Invalid Semaphore Assignement\n"
+#define UNXPCTD_NULL "Unexpected NULL pointer found\n"
+#define FREE_FAIL "Could not free memory at current location\n"
+#define THPOOL_SZ_OOR "Invalid Pool Size (0 < numThreads < 512)\n"
+#define THPOOL_NOTINIT "The ThreadPool has not been Initialized\n"
+#define NOTSPWND_THREAD "Error During Thread Creation\n"
+#define THREAD_NOTINIT  "The Thread has not been Initialized\n"
 
 #include <stdio.h>
 #include <pthread.h>
@@ -25,6 +27,7 @@ typedef struct Job Job;
 typedef struct JobQueue JobQueue;
 typedef struct Thread Thread;
 typedef struct ThreadPool ThreadPool;
+typedef struct Semaphore Semaphore;
 
 typedef struct Job {
     unsigned jobId;
@@ -38,6 +41,7 @@ typedef struct JobQueue {
     Job* queueHead;
     Job* queueTail;
     unsigned length;
+    Semaphore* syncSem;
 } JobQueue;
 
 typedef struct Thread {
@@ -56,6 +60,14 @@ typedef struct ThreadPool {
     pthread_cond_t waitingForJobs;
 } ThreadPool;
 
+enum Binary {RED, GREEN};
+typedef enum Binary Binary;
+typedef struct Semaphore {
+    Binary value;
+    pthread_mutex_t semMutex;
+    pthread_cond_t semCondition;    
+} Semaphore;
+
 /*space for functions prototypes*/
 
 JobQueue* initAJobQueue();
@@ -65,6 +77,11 @@ Job* peekJob(const JobQueue *jobQueue);
 int clearJobQueue(JobQueue* jobQueue);
 int disposeJobQueue(JobQueue* jobQueue);
 void printJobQueue(const JobQueue *jobQueue);
+
+Semaphore* initASemaphore(Binary value);
+void waitForGreenLight(Semaphore* syncSem);
+void setGreenToOneThread(Semaphore* syncSem);
+void setGreenToAllThreads(Semaphore* syncSem);
 
 Thread* spawnThread(ThreadPool* fatherPool, unsigned threadID);
 ThreadPool* initAThreadPool(unsigned poolSize);

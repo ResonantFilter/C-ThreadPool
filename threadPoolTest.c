@@ -1,4 +1,7 @@
+#include <time.h>
 #include "thread_pool.h"
+//gcc -ansi -std=c11 -Wall -lpthread thread_pool.c job_queue.c threadPoolTest.c -o threadPoolTest
+
 
 void* cycles(void* num) {
     unsigned _cycles = (*(int *)num) * (*(int *)num) * (*(int *)num);
@@ -8,20 +11,20 @@ void* cycles(void* num) {
 }
 
 int main() {
-
+    srand(time(NULL));
     ThreadPool* pool = initAThreadPool(4);
     if (pool == NULL) {
+        error("main.pool = initAthreadPool(4)-");
         error(THPOOL_SZ_OOR);
         return -1;
     }
 
-    submitJob(pool, (void *)cycles, (void *)1234);
-    submitJob(pool, (void *)cycles, (void *)4321);
-    submitJob(pool, (void *)cycles, (void *)6789);
-
-    pauseThreadPool(pool);
-
-    free(pool);
+    int i = 0;
+    while (i < 100000) {
+        int x = rand() % 100;
+        submitJob(pool, (void *)cycles, (void *)1000 + x);
+        i++;
+    }
 
     return 0;
 }

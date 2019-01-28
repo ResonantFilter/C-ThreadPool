@@ -2,15 +2,25 @@
 
 volatile int onpause = 0;
 static void pauseThread(int signum);
+void pausePool(ThreadPool* threadPool);
 
 void submitJob(ThreadPool* threadPool, void (*jobRoutine)(void*), void* routineArgs) {
     if (!threadPool) {
+        error("thread_pool.submitJob.threadPool-");
         error(THPOOL_NOTINIT);
+        return;
+    }
+
+    if (threadPool->jobQueue->length >= (threadPool->poolSize)*1000) {
+        error("Rejecting...\n");
+        sleep(1);
+        while(threadPool->jobQueue->length > (threadPool->poolSize*900));
         return;
     }
 
     Job* newJob = (Job *)malloc(sizeof(Job));
     if (!newJob) {
+        error("thread_pool.submitJob.newJob-");
         error(MALLOC_FAIL);
         return;
     }
@@ -19,13 +29,12 @@ void submitJob(ThreadPool* threadPool, void (*jobRoutine)(void*), void* routineA
     newJob->jobRoutine = jobRoutine;
     newJob->routineArgs = routineArgs;
 
-    if (pushJob(threadPool->jobQueue, newJob) < 0) {
-        return;
-    } 
+    pushJob(threadPool->jobQueue, newJob);
 }
 
 void* doWork(void* _worker) {
     if (_worker == NULL) {
+        error("thread_pool.doWork._worker-");
         error(THPOOL_NOTINIT);
         pthread_exit((void *)ENULLARG);
     }
@@ -47,36 +56,41 @@ void* doWork(void* _worker) {
     }
 
     while(1) {
-        if(fatherPool->jobQueue->length) {
-            pthread_mutex_lock(&fatherPool->threadPoolMutex);
-                ++fatherPool->numWorkingThreads;
-            pthread_mutex_unlock(&fatherPool->threadPoolMutex);
-            Job* currentJob = takeJob(fatherPool->jobQueue);
-            if (currentJob) {
-                void (*routine)(void*);
-                void *_routineArgs;
-                routine =  (void *)currentJob->jobRoutine;
-                _routineArgs = &currentJob->routineArgs;
-                routine(_routineArgs);
-                free(currentJob);
-            }
-            pthread_mutex_lock(&fatherPool->threadPoolMutex);
-                --fatherPool->numWorkingThreads;
-            pthread_mutex_unlock(&fatherPool->threadPoolMutex);
-        }
+        
+        waitForGreenLight(fatherPool->jobQueue->syncSem);
+        
+       
+        pthread_mutex_lock(&fatherPool->threadPoolMutex);
+            ++fatherPool->numWorkingThreads;
+        pthread_mutex_unlock(&fatherPool->threadPoolMutex);
+        Job* currentJob = takeJob(fatherPool->jobQueue);
+        if (currentJob) {
+            void (*routine)(void*);
+            void *_routineArgs;
+            routine =  (void *)currentJob->jobRoutine;
+            _routineArgs = &currentJob->routineArgs;
+            routine(_routineArgs);
+            free(currentJob);
+        }        
     }
-    
-    pthread_exit(0);    
+
+    pthread_mutex_lock(&fatherPool->threadPoolMutex);
+            --fatherPool->numWorkingThreads;
+    pthread_mutex_unlock(&fatherPool->threadPoolMutex);
+
+    return NULL; 
 }
 
 Thread* spawnThread(ThreadPool* fatherPool, unsigned threadID) {
     if (fatherPool == NULL) {
+        error("thread_pool.spawnThread.fatherPool-");
         error(THPOOL_NOTINIT);
         return NULL;
     }
 
     Thread* thread_str = (Thread *)malloc(sizeof(Thread));
     if (thread_str == NULL) {
+        error("thread_pool.spawnThread.thread_str-");
         error(MALLOC_FAIL);
         return NULL;        
     }
@@ -93,11 +107,13 @@ Thread* spawnThread(ThreadPool* fatherPool, unsigned threadID) {
 
 ThreadPool* initAThreadPool(unsigned poolSize) {
     if (poolSize < 0 || poolSize > 512) {
+        error("thread_pool.initAThreadPool-");
         error(THPOOL_SZ_OOR);
         return NULL;
     }
     ThreadPool* threadPool = (ThreadPool *)malloc(sizeof(ThreadPool));
     if (threadPool == NULL) {
+        error("thread_pool.initAThreadPool.threadPool-");
         error(MALLOC_FAIL);
     }
     
@@ -107,6 +123,7 @@ ThreadPool* initAThreadPool(unsigned poolSize) {
 
     threadPool->jobQueue = initAJobQueue();
     if (threadPool->jobQueue == NULL) {
+        error("thread_pool.initAThreadPool.jobQueue = initAJobQueue-");
         error(MALLOC_FAIL);
         free(threadPool);
         return NULL;
@@ -114,6 +131,7 @@ ThreadPool* initAThreadPool(unsigned poolSize) {
     
     threadPool->pooledThreads = (Thread **)malloc(poolSize * sizeof(Thread*));
     if (threadPool->pooledThreads == NULL) {
+        error("thread_pool.initAThreadPool.pooledThreads-");
         error(MALLOC_FAIL);
         disposeJobQueue(threadPool->jobQueue);
         free(threadPool);
@@ -148,8 +166,16 @@ static void pauseThread(int signum) {
     }
 }
 
+void pausePool(ThreadPool* threadPool) {
+    for (int i = 0; i < threadPool->poolSize; ++i) {
+        pthread_kill(threadPool->pooledThreads[i]->thread, SIGUSR1);
+    }
+
+}
+
 void pauseThreadPool(ThreadPool* threadPool) {
     if (!threadPool) {
+        error("thread_pool.pauseThreadPool.threadPool-");
         error(THPOOL_NOTINIT);
         return;
     }
