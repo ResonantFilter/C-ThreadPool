@@ -7,5 +7,5 @@ Simple implementation of a Thread Pool using pthread.h
 # Compiling
 compile using:
 ```console
-  $ gcc -ansi -std=c11 -Wall -lpthread thread_pool.c job_queue.c threadPoolTest.c
+  $ gcc -ansi -std=c11 -Wall -lpthread thread_pool.c job_queue.c TPoolTest_longCycles.c -o TPoolTest_longCycles
 ```
