@@ -4,17 +4,18 @@ volatile int onpause = 0;
 static void pauseThread(int signum);
 void pausePool(ThreadPool* threadPool);
 
+static volatile int jobID = 0;
+
 void submitJob(ThreadPool* threadPool, void (*jobRoutine)(void*), void* routineArgs) {
+    printf("jobqueue length: %d\n", threadPool->jobQueue->length);
     if (!threadPool) {
         error("thread_pool.submitJob.threadPool-");
         error(THPOOL_NOTINIT);
         return;
     }
-
-    if (threadPool->jobQueue->length >= (threadPool->poolSize)*1000) {
-        error("Rejecting...\n");
-        sleep(1);
-        while(threadPool->jobQueue->length > (threadPool->poolSize*900));
+    const unsigned maxJobs = 100000;
+    if (threadPool->jobQueue->length >= (threadPool->poolSize)*maxJobs) {
+        while(threadPool->jobQueue->length > (threadPool->poolSize*(maxJobs*0.9)));
         return;
     }
 
@@ -25,7 +26,8 @@ void submitJob(ThreadPool* threadPool, void (*jobRoutine)(void*), void* routineA
         return;
     }
 
-    newJob->jobId = !(threadPool->jobQueue->queueHead) ? 0 : peekJob(threadPool->jobQueue)->jobId++;
+    // newJob->jobId = !(threadPool->jobQueue->queueHead) ? 0 : peekJob(threadPool->jobQueue)->jobId++;
+    newJob->jobId = jobID++;
     newJob->jobRoutine = jobRoutine;
     newJob->routineArgs = routineArgs;
 
@@ -56,7 +58,7 @@ void* doWork(void* _worker) {
     }
 
     while(1) {
-        
+        //printf("Worker %d waiting for GREENlight\n", worker->threadID);
         waitForGreenLight(fatherPool->jobQueue->syncSem);
         
        
@@ -64,6 +66,7 @@ void* doWork(void* _worker) {
             ++fatherPool->numWorkingThreads;
         pthread_mutex_unlock(&fatherPool->threadPoolMutex);
         Job* currentJob = takeJob(fatherPool->jobQueue);
+        printf("Worker %d, job taken: job id %d\n", worker->threadID, currentJob->jobId);
         if (currentJob) {
             void (*routine)(void*);
             void *_routineArgs;

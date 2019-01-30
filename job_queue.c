@@ -39,6 +39,7 @@ int pushJob(JobQueue* jobQueue, Job* newJob) {
             jobQueue->queueTail = newJob;           
             ++jobQueue->length;
             setGreenToOneThread(jobQueue->syncSem);
+            //printf("l=0, sent GREEN signal\n");
         pthread_mutex_unlock(&(jobQueue->queueMutex));
         
         return 0;
@@ -49,6 +50,7 @@ int pushJob(JobQueue* jobQueue, Job* newJob) {
         jobQueue->queueTail = newJob;
         ++jobQueue->length;
         setGreenToOneThread(jobQueue->syncSem);
+        //printf("l>0, sent GREEN signal\n");
     pthread_mutex_unlock(&(jobQueue->queueMutex));
 
     return 0;
@@ -77,8 +79,8 @@ Job* takeJob(JobQueue* jobQueue) {
             jobQueue->queueHead = NULL;
             jobQueue->queueTail = NULL;
             jobQueue->length = 0;
-            return jobToBeTaken;
         pthread_mutex_unlock(&(jobQueue->queueMutex));
+        return jobToBeTaken;
     }
 
     pthread_mutex_lock(&(jobQueue->queueMutex));
