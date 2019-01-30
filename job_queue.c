@@ -110,6 +110,7 @@ int clearJobQueue(JobQueue* jobQueue) {
 
 int disposeJobQueue(JobQueue* jobQueue) {
     clearJobs(jobQueue);
+    free(jobQueue->syncSem);
     free(jobQueue);
     return 0;
 }

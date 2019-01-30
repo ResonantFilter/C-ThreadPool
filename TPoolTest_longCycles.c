@@ -5,9 +5,7 @@
 static volatile int running = 1;
 
 void sigHandler(int signum) {
-    printf("Exiting...\n");
     running = 0;
-    exit(0);
 }
 
 void* cycles(void* _num) {
@@ -44,5 +42,8 @@ int main(int argc, char** argv) {
         submitJob(pool, (void *)cycles, (void *)800 + x);
         sleep(1);
     }
+
+    disposeThreadPool(pool);
+    printf("Exiting...\n");
     return 0;
 }

@@ -162,6 +162,25 @@ ThreadPool* initAThreadPool(unsigned poolSize) {
     return threadPool;
 }
 
+void disposeThreadPool(ThreadPool* threadPool) {
+    printf("\nDisposing Resources..\n");
+    if (threadPool == NULL) {
+        error("thread_pool.disposeThreadPool.threadPool-");
+        error(THPOOL_NOTINIT);
+        return;
+    }
+
+    disposeJobQueue(threadPool->jobQueue);
+    
+    for (unsigned i = 0; i < threadPool->poolSize; ++i) {
+        pthread_kill(threadPool->pooledThreads[i]->thread, SIGINT);
+        free(threadPool->pooledThreads[i]);
+    }
+    free(threadPool->pooledThreads);
+
+    free(threadPool);
+}
+
 static void pauseThread(int signum) {
     onpause = 1;
     while(onpause) {

@@ -88,5 +88,6 @@ ThreadPool* initAThreadPool(unsigned poolSize);
 void* doWork(void* _worker);
 void submitJob(ThreadPool* threadPool, void (*jobRoutine)(void*), void* routineArgs);
 void pauseThreadPool(ThreadPool* threadPool);
+void disposeThreadPool(ThreadPool* threadPool);
 
 #endif
