@@ -2,7 +2,7 @@
 Simple implementation of a Thread Pool using pthread.h
 
 # Status
-  Suffers from starvation but it is starting to work as expected..
+  It now works as a simple task push/pull, with bugs appearing from time to time
 
 # Compiling
 compile using:
