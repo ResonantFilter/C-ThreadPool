@@ -5,3 +5,4 @@
 .vscode/*
 vgcore*
 TPoolTest_longCycles
+TPoolTest_IO

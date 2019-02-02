@@ -31,7 +31,7 @@ typedef struct Semaphore Semaphore;
 
 typedef struct Job {
     unsigned jobId;
-    struct Job* nextJob;   /*TODO*/
+    Job* nextJob;
     void  (*jobRoutine)(void* arg);
     void* routineArgs;
 } Job;
@@ -46,7 +46,7 @@ typedef struct JobQueue {
 
 typedef struct Thread {
     unsigned threadID;
-    ThreadPool* fatherPool; //ThreadPool to which the Thread belongs
+    ThreadPool* fatherPool; //pointer to the ThreadPool to which the Thread belongs
     pthread_t thread;
 } Thread;
 

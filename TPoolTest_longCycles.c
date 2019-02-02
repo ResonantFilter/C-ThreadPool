@@ -4,12 +4,17 @@
 
 static volatile int running = 1;
 
+struct arg {
+    unsigned value;
+}; 
+
 void sigHandler(int signum) {
     running = 0;
 }
 
-void* cycles(void* _num) {
-    unsigned num = *(int *)_num;
+void* cycles(void* arg_v) {
+    struct arg a = *(struct arg *)arg_v;
+    unsigned num = a.value;
     unsigned _cycles = num * num * num;
     for (unsigned i = 0; i < _cycles; ++i);
     printf("made %u cycles\n", _cycles);
@@ -39,7 +44,10 @@ int main(int argc, char** argv) {
 
     while (running) {
         int x = rand() % 500;
-        submitJob(pool, (void *)cycles, (void *)800 + x);
+        struct arg* a = (struct arg*)malloc(sizeof(struct arg)); 
+        unsigned v = 800+x;
+        a->value = v;
+        submitJob(pool, (void *)cycles, (void *)a);
         sleep(1);
     }
 

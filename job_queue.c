@@ -63,10 +63,12 @@ Job* takeJob(JobQueue* jobQueue) {
         return NULL;
     }
 
-    if (!jobQueue->length) {
-        error("No more jobs to do!\n");
-        exit(0);
-    }
+    pthread_mutex_lock(&jobQueue->queueMutex);
+        if (!jobQueue->length) {
+            error("No more jobs to do!\n");
+            return NULL;            
+        }
+    pthread_mutex_unlock(&jobQueue->queueMutex);
 
     if (jobQueue->length == 1) {
         pthread_mutex_lock(&(jobQueue->queueMutex));
