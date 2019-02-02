@@ -18,29 +18,27 @@ void* readFile(const void* const argv) {
     }
     struct arg a = *(struct arg*)argv;
     const char* const inputFileName = a.path;
-    printf("####\n");
+    
     FILE* fPointer = fopen(inputFileName, "r");
     if (!fPointer) {
         fprintf(stderr, "No such file\n");
         return NULL;
     }
-    printf("########\n");
+    
     fseek(fPointer, 0, SEEK_END);
     long fileLength = ftell(fPointer);
     fseek(fPointer, 0, SEEK_SET);
-    printf("#############\n");
+    
     char* readText = (char*)malloc(fileLength);
     if (!readText) {
         fprintf(stderr, "Could not read file's content\n");
         return NULL;
     }
-    printf("##################\n");
+    
     fread(readText, 1, fileLength, fPointer);
-    printf("######################\n");
     if (fPointer) fclose(fPointer);
     printf("%s\n", readText);
     printf("Done..\n");
-    printf("DOOOOOOOOONEEEEEEEEEEEEE\n");
     return NULL;
 }
 
