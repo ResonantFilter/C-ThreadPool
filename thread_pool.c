@@ -66,12 +66,14 @@ void* doWork(void* _worker) {
 
     while(1) {
         waitForGreenLight(fatherPool->jobQueue->syncSem);        
-       
+        error("after wait\n");
         pthread_mutex_lock(&fatherPool->threadPoolMutex);
             ++fatherPool->numWorkingThreads;
         pthread_mutex_unlock(&fatherPool->threadPoolMutex);
-        
+        error("after ++\n");
         Job* currentJob = takeJob(fatherPool->jobQueue);
+        printf("JOBADDR: %p\n", currentJob);
+        error("Job taken\n");
         if (currentJob) {
             printf("Worker %d, job %d taken\n", worker->threadID, currentJob->jobId);
             void (*routine)(void*);
@@ -84,12 +86,12 @@ void* doWork(void* _worker) {
             }
             routine(_routineArgs);
             free(currentJob);
-        }
-
-        pthread_mutex_lock(&fatherPool->threadPoolMutex);
-            --fatherPool->numWorkingThreads;
-        pthread_mutex_unlock(&fatherPool->threadPoolMutex);     
+        }  
     }
+
+    pthread_mutex_lock(&fatherPool->threadPoolMutex);
+            --fatherPool->numWorkingThreads;
+    pthread_mutex_unlock(&fatherPool->threadPoolMutex);   
 
     return NULL; 
 }

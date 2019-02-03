@@ -61,14 +61,14 @@ Job* takeJob(JobQueue* jobQueue) {
     }
 
     pthread_mutex_lock(&jobQueue->queueMutex);
-        if (peekJob(jobQueue) == NULL) {
-            initASemaphore(RED);
-            return NULL;
-        }
-    pthread_mutex_unlock(&jobQueue->queueMutex);
+    
+    if (peekJob(jobQueue) == NULL) {
+        error("NO MORE JOBS!!!\n");
+        pthread_mutex_unlock(&jobQueue->queueMutex);
+        return NULL;
+    }
 
     if (jobQueue->length == 1) {
-        pthread_mutex_lock(&(jobQueue->queueMutex));
             Job* jobToBeTaken = jobQueue->queueHead;
             if (!jobToBeTaken) {
                 error("job_queue.takeJob.jobToBeTaken [length = 1]-");
@@ -79,21 +79,22 @@ Job* takeJob(JobQueue* jobQueue) {
             jobQueue->queueTail = NULL;
             jobQueue->length = 0;
         pthread_mutex_unlock(&(jobQueue->queueMutex));
+        error("LAST JOB SENT\n");
         return jobToBeTaken;
     }
 
-    pthread_mutex_lock(&(jobQueue->queueMutex));
-        Job* jobToBeTaken = jobQueue->queueHead;
-        if (!jobToBeTaken) {
-            error("job_queue.takeJob.jobToBeTaken [length > 1]-");
-            error(UNXPCTD_NULL);
-            return NULL;
-        }
-        jobQueue->queueHead = jobQueue->queueHead->nextJob;
-        --jobQueue->length;
-        setGreenToOneThread(jobQueue->syncSem);
-    pthread_mutex_unlock(&(jobQueue->queueMutex));
+    Job* jobToBeTaken = jobQueue->queueHead;
+    if (!jobToBeTaken) {
+        error("job_queue.takeJob.jobToBeTaken [length > 1]-");
+        error(UNXPCTD_NULL);
+        return NULL;
+    }
+    jobQueue->queueHead = jobQueue->queueHead->nextJob;
+    --jobQueue->length;
     
+    setGreenToOneThread(jobQueue->syncSem);  
+    pthread_mutex_unlock(&(jobQueue->queueMutex));
+      
     return jobToBeTaken;    
 }
 
