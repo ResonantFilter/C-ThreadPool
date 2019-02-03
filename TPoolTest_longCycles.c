@@ -1,6 +1,6 @@
 #include <time.h>
 #include "thread_pool.h"
-//gcc -ansi -std=c11 -Wall -lpthread thread_pool.c job_queue.c TPoolTest_longCycles.c -o TPoolTest_longCycles
+//gcc -ansi -std=c11 -Wall -lpthread thread_pool.c TPoolTest_longCycles.c -o TPoolTest_longCycles
 
 static volatile int running = 1;
 

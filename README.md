@@ -22,13 +22,13 @@ void disposeThreadPool(ThreadPool* threadPool);
 ## Compiling
 compile using:
 ```console
-  $ gcc -ansi -std=c11 -Wall -lpthread thread_pool.c job_queue.c
+  $ gcc -ansi -std=c11 -Wall -lpthread thread_pool.c
 ```
 ### Example
 ```C
 #include <time.h>
 #include "thread_pool.h"
-//gcc -ansi -std=c11 -Wall -lpthread thread_pool.c job_queue.c TPoolTest_longCycles.c -o TPoolTest_longCycles
+//gcc -ansi -std=c11 -Wall -lpthread thread_pool.c TPoolTest_longCycles.c -o TPoolTest_longCycles
 
 static volatile int running = 1;
 
@@ -49,8 +49,7 @@ void* cycles(void* arg_v) {
     return NULL;
 }
 
-int main(int argc, char** argv) {
-    
+int main(int argc, char** argv) {    
     /*
     * Setup...
     */

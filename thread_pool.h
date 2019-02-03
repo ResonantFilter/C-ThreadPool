@@ -68,26 +68,10 @@ typedef struct Semaphore {
     pthread_cond_t semCondition;    
 } Semaphore;
 
-/*space for functions prototypes*/
+/* Exported Method to be used by Users */
 
-JobQueue* initAJobQueue();
-int pushJob(JobQueue* jobQueue, Job* newJob);
-Job* takeJob(JobQueue* jobQueue);
-Job* peekJob(const JobQueue *jobQueue);
-int clearJobQueue(JobQueue* jobQueue);
-int disposeJobQueue(JobQueue* jobQueue);
-void printJobQueue(const JobQueue *jobQueue);
-
-Semaphore* initASemaphore(Binary value);
-void waitForGreenLight(Semaphore* syncSem);
-void setGreenToOneThread(Semaphore* syncSem);
-void setGreenToAllThreads(Semaphore* syncSem);
-
-Thread* spawnThread(ThreadPool* fatherPool, unsigned threadID);
 ThreadPool* initAThreadPool(unsigned poolSize);
-void* doWork(void* _worker);
 void submitJob(ThreadPool* threadPool, void (*jobRoutine)(void*), void* routineArgs);
-void pauseThreadPool(ThreadPool* threadPool);
 void disposeThreadPool(ThreadPool* threadPool);
 
 #endif
