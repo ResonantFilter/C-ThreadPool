@@ -67,7 +67,6 @@ int main(int argc, char** argv) {
         unsigned int v = (unsigned int) (800 + x);
         a->value = v;
         submitJob(pool, (void *)cycles, (void *)a);
-        //sleep(1);
     }
 
     disposeThreadPool(pool);

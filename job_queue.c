@@ -63,7 +63,6 @@ Job* takeJob(JobQueue* jobQueue) {
     pthread_mutex_lock(&jobQueue->queueMutex);
     
     if (peekJob(jobQueue) == NULL) {
-        error("NO MORE JOBS!!!\n");
         pthread_mutex_unlock(&jobQueue->queueMutex);
         return NULL;
     }
@@ -79,7 +78,6 @@ Job* takeJob(JobQueue* jobQueue) {
             jobQueue->queueTail = NULL;
             jobQueue->length = 0;
         pthread_mutex_unlock(&(jobQueue->queueMutex));
-        error("LAST JOB SENT\n");
         return jobToBeTaken;
     }
 

@@ -10,7 +10,7 @@ void submitJob(ThreadPool* threadPool, void (*jobRoutine)(void*), void* routineA
         error(JQ_NOTINIT);
         return;
     }
-    printf("jobqueue length: %d\n", threadPool->jobQueue->length);
+    //printf("jobqueue length: %d\n", threadPool->jobQueue->length);
     static volatile int jobID = 0;
     if (!threadPool) {
         error("thread_pool.submitJob.threadPool-");
@@ -37,7 +37,6 @@ void submitJob(ThreadPool* threadPool, void (*jobRoutine)(void*), void* routineA
 
     if (pushJob(threadPool->jobQueue, newJob) < 0) {
         error("PushJob Failed to Execute");
-        //sleep(5);
     }
 }
 
@@ -66,16 +65,14 @@ void* doWork(void* _worker) {
 
     while(1) {
         waitForGreenLight(fatherPool->jobQueue->syncSem);        
-        error("after wait\n");
+        
         pthread_mutex_lock(&fatherPool->threadPoolMutex);
             ++fatherPool->numWorkingThreads;
         pthread_mutex_unlock(&fatherPool->threadPoolMutex);
-        error("after ++\n");
+        
         Job* currentJob = takeJob(fatherPool->jobQueue);
-        printf("JOBADDR: %p\n", currentJob);
-        error("Job taken\n");
         if (currentJob) {
-            printf("Worker %d, job %d taken\n", worker->threadID, currentJob->jobId);
+            //printf("Worker %d, job %d taken\n", worker->threadID, currentJob->jobId);
             void (*routine)(void*);
             void *_routineArgs;
             routine =  (void *)currentJob->jobRoutine;
@@ -167,7 +164,7 @@ ThreadPool* initAThreadPool(unsigned poolSize) {
             disposeJobQueue(threadPool->jobQueue);
             free(threadPool);
         }
-        printf("Spawned Thread no. %d\n", threadPool->pooledThreads[i]->threadID);
+        //printf("Spawned Thread no. %d\n", threadPool->pooledThreads[i]->threadID);
     }
 
     while(threadPool->numAliveThreads != threadPool->poolSize);
