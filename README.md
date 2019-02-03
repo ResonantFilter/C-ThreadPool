@@ -62,7 +62,10 @@ int main(int argc, char** argv) {
 
     while (running) {
         int x = rand() % 500;
-        struct arg* a = (struct arg*)malloc(sizeof(struct arg)); 
+        struct arg* a = (struct arg*)malloc(sizeof(struct arg));
+        if (!a) {
+            return -1;
+        }
         unsigned int v = (unsigned int) (800 + x);
         a->value = v;
         submitJob(pool, (void *)cycles, (void *)a);
