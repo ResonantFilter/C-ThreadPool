@@ -5,6 +5,11 @@ static void pauseThread(int signum);
 void pausePool(ThreadPool* threadPool);
 
 void submitJob(ThreadPool* threadPool, void (*jobRoutine)(void*), void* routineArgs) {
+    if (!threadPool->jobQueue) {
+        error("thread_pool.submitJob.threadPool->jobQueue-");
+        error(JQ_NOTINIT);
+        return;
+    }
     printf("jobqueue length: %d\n", threadPool->jobQueue->length);
     static volatile int jobID = 0;
     if (!threadPool) {
@@ -28,8 +33,12 @@ void submitJob(ThreadPool* threadPool, void (*jobRoutine)(void*), void* routineA
     newJob->jobId = jobID++;
     newJob->jobRoutine = jobRoutine;
     newJob->routineArgs = routineArgs;
+    //printf("routine addr: %p, args addr: %p\n", newJob->jobRoutine, newJob->routineArgs);
 
-    pushJob(threadPool->jobQueue, newJob);
+    if (pushJob(threadPool->jobQueue, newJob) < 0) {
+        error("PushJob Failed to Execute");
+        //sleep(5);
+    }
 }
 
 void* doWork(void* _worker) {
@@ -56,15 +65,15 @@ void* doWork(void* _worker) {
     }
 
     while(1) {
-        waitForGreenLight(fatherPool->jobQueue->syncSem);
-        
+        waitForGreenLight(fatherPool->jobQueue->syncSem);        
        
         pthread_mutex_lock(&fatherPool->threadPoolMutex);
             ++fatherPool->numWorkingThreads;
         pthread_mutex_unlock(&fatherPool->threadPoolMutex);
+        
         Job* currentJob = takeJob(fatherPool->jobQueue);
-        printf("Worker %d, job taken\n", worker->threadID);
         if (currentJob) {
+            printf("Worker %d, job %d taken\n", worker->threadID, currentJob->jobId);
             void (*routine)(void*);
             void *_routineArgs;
             routine =  (void *)currentJob->jobRoutine;
@@ -75,14 +84,12 @@ void* doWork(void* _worker) {
             }
             routine(_routineArgs);
             free(currentJob);
-        } else {
-            error("Pausing....\n");
-        }       
-    }
+        }
 
-    pthread_mutex_lock(&fatherPool->threadPoolMutex);
+        pthread_mutex_lock(&fatherPool->threadPoolMutex);
             --fatherPool->numWorkingThreads;
-    pthread_mutex_unlock(&fatherPool->threadPoolMutex);
+        pthread_mutex_unlock(&fatherPool->threadPoolMutex);     
+    }
 
     return NULL; 
 }
@@ -104,7 +111,7 @@ Thread* spawnThread(ThreadPool* fatherPool, unsigned threadID) {
     thread_str->threadID = threadID;
     thread_str->fatherPool = fatherPool;
     
-    pthread_create(&(thread_str->thread), NULL, doWork, thread_str);
+    pthread_create(&(thread_str->thread), NULL, doWork, (void *)thread_str);
     pthread_detach(thread_str->thread);
 
     return thread_str;
@@ -121,6 +128,7 @@ ThreadPool* initAThreadPool(unsigned poolSize) {
     if (threadPool == NULL) {
         error("thread_pool.initAThreadPool.threadPool-");
         error(MALLOC_FAIL);
+        return NULL;
     }
     
     threadPool->poolSize = poolSize;

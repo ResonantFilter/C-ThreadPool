@@ -32,27 +32,24 @@ int pushJob(JobQueue* jobQueue, Job* newJob) {
         return ENULLARG;
     }
 
-    newJob->nextJob = NULL;
+    pthread_mutex_lock(&(jobQueue->queueMutex));
+
     if (jobQueue->length == 0) {
-        pthread_mutex_lock(&(jobQueue->queueMutex));
-            jobQueue->queueHead = newJob;
-            jobQueue->queueTail = newJob;           
-            ++jobQueue->length;
-            setGreenToOneThread(jobQueue->syncSem);
-            //printf("l=0, sent GREEN signal\n");
+        jobQueue->queueHead = newJob;
+        jobQueue->queueTail = newJob;
+        newJob->nextJob = NULL;
+        ++jobQueue->length;
+        setGreenToOneThread(jobQueue->syncSem);
         pthread_mutex_unlock(&(jobQueue->queueMutex));
-        
         return 0;
     }
 
-    pthread_mutex_lock(&(jobQueue->queueMutex));        
-        jobQueue->queueTail->nextJob = newJob;
-        jobQueue->queueTail = newJob;
-        ++jobQueue->length;
-        setGreenToOneThread(jobQueue->syncSem);
-        //printf("l>0, sent GREEN signal\n");
+    jobQueue->queueTail->nextJob = newJob;
+    jobQueue->queueTail = newJob;
+    newJob->nextJob = NULL;
+    ++jobQueue->length;
+    setGreenToOneThread(jobQueue->syncSem);
     pthread_mutex_unlock(&(jobQueue->queueMutex));
-
     return 0;
 }
 
@@ -64,9 +61,9 @@ Job* takeJob(JobQueue* jobQueue) {
     }
 
     pthread_mutex_lock(&jobQueue->queueMutex);
-        if (!jobQueue->length) {
-            error("No more jobs to do!\n");
-            return NULL;            
+        if (peekJob(jobQueue) == NULL) {
+            initASemaphore(RED);
+            return NULL;
         }
     pthread_mutex_unlock(&jobQueue->queueMutex);
 

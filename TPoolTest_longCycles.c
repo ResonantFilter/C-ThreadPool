@@ -22,17 +22,17 @@ void* cycles(void* arg_v) {
 }
 
 int main(int argc, char** argv) {
-    int numThreads;
+    unsigned int numThreads;
     if (argc < 2) {
         error("Usage: ./TPoolTest_longCycles numThreads\n");
         return -1;
     } else {
-        numThreads = strtol(argv[1], NULL, 10);
+        numThreads = (unsigned int) strtol(argv[1], NULL, 10);
     }
 
-    const int NUMTHREADS = numThreads;
+    const unsigned int NUMTHREADS = numThreads;
 
-    srand(time(NULL));
+    srand((unsigned int) time(NULL));
     signal(SIGINT, sigHandler);
 
     ThreadPool* pool = initAThreadPool(NUMTHREADS);
@@ -45,10 +45,10 @@ int main(int argc, char** argv) {
     while (running) {
         int x = rand() % 500;
         struct arg* a = (struct arg*)malloc(sizeof(struct arg)); 
-        unsigned v = 800+x;
+        unsigned int v = (unsigned int) (800 + x);
         a->value = v;
         submitJob(pool, (void *)cycles, (void *)a);
-        sleep(1);
+        //sleep(1);
     }
 
     disposeThreadPool(pool);

@@ -21,7 +21,7 @@ void* readFile(const void* const argv) {
     
     FILE* fPointer = fopen(inputFileName, "r");
     if (!fPointer) {
-        fprintf(stderr, "No such file\n");
+        fprintf(stderr, "%s, No such file\n", inputFileName);
         return NULL;
     }
     
@@ -29,13 +29,18 @@ void* readFile(const void* const argv) {
     long fileLength = ftell(fPointer);
     fseek(fPointer, 0, SEEK_SET);
     
-    char* readText = (char*)malloc(fileLength);
+    char* readText = (char*)malloc((size_t) fileLength);
     if (!readText) {
         fprintf(stderr, "Could not read file's content\n");
         return NULL;
     }
     
-    fread(readText, 1, fileLength, fPointer);
+    if (fread(readText, 1, fileLength, fPointer) != fileLength) {
+        error("#######################################\n");
+        error("fread encountered an error!\n");
+        return NULL;
+    }
+
     if (fPointer) fclose(fPointer);
     printf("%s\n", readText);
     printf("Done..\n");
@@ -43,15 +48,15 @@ void* readFile(const void* const argv) {
 }
 
 int main(int argc, char** argv) {
-    int numThreads;
+    unsigned int numThreads;
     if (argc < 2) {
         error("Usage: ./TPoolTest_IO numThreads\n");
         return -1;
     } else {
-        numThreads = strtol(argv[1], NULL, 10);
+        numThreads = (unsigned int) strtol(argv[1], NULL, 10);
     }
 
-    const int NUMTHREADS = numThreads;
+    const unsigned int NUMTHREADS = numThreads;
 
     srand(time(NULL));
     signal(SIGINT, sigHandler);
@@ -60,32 +65,27 @@ int main(int argc, char** argv) {
     struct arg* arg_v = (struct arg* )malloc(sizeof(struct arg));
     if (!arg_v) return 0;
 
-    while(running) {
-        sleep(2);
-        
+    while(running) {        
         struct arg* arg_v1 = (struct arg* )malloc(sizeof(struct arg));
         if (!arg_v1) return 0;
-        char* c1 = "./.gitignore";
+        char* c1 = "/home/resonantFilter/Programming/myStuff/Concurrency/ThreadPoolC/TPool-C/.gitignore";
         arg_v1->path = c1;
         submitJob(pool, (void*)readFile, (void *)arg_v1);
+        sleep(1);
         
         struct arg* arg_v2 = (struct arg* )malloc(sizeof(struct arg));
         if (!arg_v2) return 0;        
-        char* c2 = "./thread_pool.c";
+        char* c2 = "/home/resonantFilter/Programming/myStuff/Concurrency/ThreadPoolC/TPool-C/README.md";
         arg_v2->path = c2;
         submitJob(pool, (void*)readFile, (void *)arg_v2);        
-        
+        sleep(1);
+
         struct arg* arg_v3 = (struct arg* )malloc(sizeof(struct arg));
-        if (!arg_v3) return 0;
-        char* c3 = "./TPoolTest_IO.c";
+        if (!arg_v3) return 0;        
+        char* c3 = "/home/resonantFilter/Programming/myStuff/count.cpp";
         arg_v3->path = c3;
-        submitJob(pool, (void*)readFile, (void *)arg_v3);
-        
-        struct arg* arg_v4 = (struct arg* )malloc(sizeof(struct arg));
-        if (!arg_v4) return 0;
-        char* c4 = "./TPoolTest_longCycles.c";
-        arg_v4->path = c4;
-        submitJob(pool, (void*)readFile, (void *)arg_v4);
+        submitJob(pool, (void*)readFile, (void *)arg_v3);        
+        sleep(1);
     }   
 
     disposeThreadPool(pool);
