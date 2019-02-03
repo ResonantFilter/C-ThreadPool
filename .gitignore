@@ -2,9 +2,8 @@
 *.cc
 *.out
 .vscode
-.vscode/*
+.idea
 cmake-build-debug
-cmake-build-debug/*
 vgcore*
 TPoolTest_longCycles
 TPoolTest_IO
