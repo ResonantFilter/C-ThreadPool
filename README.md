@@ -23,7 +23,7 @@ void disposeThreadPool(ThreadPool* threadPool);
 ## Compiling
 compile using:
 ```console
-  $ gcc -ansi -std=c11 -Wall -lpthread thread_pool.c
+  $ gcc -ansi -std=c11 -Wall -lpthread -c thread_pool.c
 ```
 ### Examples
 
