@@ -1,5 +1,5 @@
 # TPool-C
-Simple implementation of a Thread Pool using pthread.h
+Simple implementation of a Thread Pool using pthread.h.
 Made for educational porpuses only, it does not mean to be an example of fast performances and/or correctness.
 
 ### Status
