@@ -62,30 +62,27 @@ int main(int argc, char** argv) {
 
     ThreadPool* pool = initAThreadPool(NUMTHREADS);
     struct arg* arg_v = (struct arg* )malloc(sizeof(struct arg));
-    if (!arg_v) return 0;
+    if (!arg_v) return -1;
 
     while(running) {
         printf("adding...\n");  
         struct arg* arg_v1 = (struct arg* )malloc(sizeof(struct arg));
         if (!arg_v1) return 0;
-        char* c1 = "/home/resonantFilter/Programming/myStuff/Concurrency/ThreadPoolC/TPool-C/.gitignore";
+        char* c1 = "./.gitignore";
         arg_v1->path = c1;
         submitJob(pool, (void*)readFile, (void *)arg_v1);
-        //sleep(1);
         
         struct arg* arg_v2 = (struct arg* )malloc(sizeof(struct arg));
         if (!arg_v2) return 0;        
-        char* c2 = "/home/resonantFilter/Programming/myStuff/Concurrency/ThreadPoolC/TPool-C/README.md";
+        char* c2 = "./README.md";
         arg_v2->path = c2;
         submitJob(pool, (void*)readFile, (void *)arg_v2);        
-        //sleep(1);
 
         struct arg* arg_v3 = (struct arg* )malloc(sizeof(struct arg));
         if (!arg_v3) return 0;        
-        char* c3 = "/home/resonantFilter/Programming/myStuff/count.cpp";
+        char* c3 = "./TPoolTest_IO.c";
         arg_v3->path = c3;
         submitJob(pool, (void*)readFile, (void *)arg_v3);        
-        //sleep(1);
     }   
 
     disposeThreadPool(pool);
