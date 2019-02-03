@@ -36,7 +36,6 @@ void* readFile(const void* const argv) {
     }
     
     if (fread(readText, 1, fileLength, fPointer) != fileLength) {
-        error("#######################################\n");
         error("fread encountered an error!\n");
         return NULL;
     }
